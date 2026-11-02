@@ -3,6 +3,7 @@ import "./App.css";
 
 function App() {
   const [selectedFile, setSelectedFile] = useState(null);
+  const [backendStatus, setBackendStatus] = useState(null);
   const fileInputRef = useRef(null);
 
   async function handleReadFile() {
@@ -12,6 +13,21 @@ function App() {
     const lines = contents.trim().split("\n");
     console.log(lines);
     console.log(contents);
+  }
+
+  async function checkBackendStatus() {
+    try{
+      const response = await fetch("http://127.0.0.1:8000/status");
+      if (!response.ok) {
+        throw new Error("Backend returned an unsuccessful response");
+      }
+      const data = await response.json();
+      setBackendStatus(data);
+      
+    } catch {
+      setBackendStatus({status: "offline"});
+    }
+    
   }
 
   return (
@@ -37,11 +53,18 @@ function App() {
         Remove file
       </button>
 
-      <button
-        type="button"
-        onClick={handleReadFile}>
-          Read File
-        </button>
+      <button type="button" onClick={handleReadFile}>
+        Read File
+      </button>
+
+      <p>
+        Backend Status: {backendStatus?.status ?? "Not Checked"}
+      </p>
+
+      <button type="button" onClick={checkBackendStatus}>
+        Check Backend
+      </button>
+
     </>
   );
 }
