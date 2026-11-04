@@ -24,39 +24,15 @@ def get_status():
             "application": "NeuroSig",
             "supported_format": "CSV"}
 
-@app.post("/analyze")
-async def analyze(file: UploadFile = File()):
-    contents = await file.read()
-    text = contents.decode("utf-8")
+def parse_csv(text):
     csv_file = io.StringIO(text)
     reader = csv.DictReader(csv_file)
     rows = list(reader)
-
-    if not rows:
-        raise HTTPException(
-            status_code = 400,
-            detail = "CSV file contains no measurements"
-        )
-    
-    row_count = len(rows)
     columns = reader.fieldnames
 
+    return rows, columns
 
-    #If no columns/headers, raise HTTP exception
-    if not columns:
-        raise HTTPException(
-            status_code = 400,
-            detail="CSV must contain column headers"
-    )
-
-    # List of every channel in the form of strings
-    channels = [column for column in columns if column != "time"]
-
-    if not channels:
-        raise HTTPException(
-            status_code=400,
-            detail="CSV contains no EEG channels"
-        )
+def calculate_statistics(rows, channels):
 
     # Initialize lists for each channel which contains measurements
     measurements = {}
@@ -95,20 +71,56 @@ async def analyze(file: UploadFile = File()):
 
     # Calculates standard deviations for each channel
     for channel in channels:
-            standard_devs[channel] = round(statistics.pstdev(measurements[channel]), 3)
+        standard_devs[channel] = round(statistics.pstdev(measurements[channel]), 3)
 
     # Calculates average for each channel
     averages = {}
     for channel in channels:
         averages[channel] = round(totals.get(channel)/len(rows), 4)
+
+    return {
+        "averages": averages,
+        "minimums": minimums,
+        "maximums": maximums,
+        "standard_devs": standard_devs,
+        "measurements": measurements
+    }
+
+@app.post("/analyze")
+async def analyze(file: UploadFile = File()):
+    contents = await file.read()
+    text = contents.decode("utf-8")
+    rows, columns = parse_csv(text)
+    row_count = len(rows)
+
     
+    # Checks if there are columns and then rows
+    if not columns:
+        raise HTTPException(
+            status_code = 400,
+            detail="CSV must contain column headers"
+    )
+
+    if not rows:
+            raise HTTPException(
+                status_code = 400,
+                detail = "CSV file contains no measurements"
+            )
+
+    # List of every channel in the form of strings
+    channels = [column for column in columns if column != "time"]
+
+    if not channels:
+        raise HTTPException(
+            status_code=400,
+            detail="CSV contains no EEG channels"
+        )
+
+    stats = calculate_statistics(rows, channels)
 
     return {"filename": file.filename,
             "row_count": row_count,
             "columns": columns,
             "channels": channels,
-            "averages": averages,
-            "maximums": maximums,
-            "minimums": minimums,
-            "standard_devs": standard_devs,
-            "measurements": measurements}
+            **stats
+    }
