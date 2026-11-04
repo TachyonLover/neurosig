@@ -5,24 +5,36 @@ function App() {
   const [selectedFile, setSelectedFile] = useState(null);
   const [backendStatus, setBackendStatus] = useState(null);
   const [analysisResults, setAnalysisResults] = useState(null);
+  const [errorMessage, setErrorMessage] = useState(null);
   const fileInputRef = useRef(null);
 
   async function handleReadFile() {
     if (!selectedFile) return;
 
-
     const formData = new FormData();
     formData.append("file", selectedFile);
 
+    try {
+      const response = await fetch("http://127.0.0.1:8000/analyze", {
+        method: "POST",
+        body: formData,
+      });
 
-    const response = await fetch("http://127.0.0.1:8000/analyze", {
-      method: "POST",
-      body: formData,
-    });
+      const data = await response.json();
 
+      if (!response.ok) {
+        console.log(data);
+        setErrorMessage(data.detail);
+        return;
+      }
 
-    const data = await response.json();
-    setAnalysisResults(data);
+      setErrorMessage(null);
+
+      setAnalysisResults(data);
+    } catch (error) {
+      console.error(error)
+      setErrorMessage("Could not connect to the backend.");
+    }
   }
 
   async function checkBackendStatus() {
@@ -35,7 +47,6 @@ function App() {
 
       const data = await response.json();
       setBackendStatus(data);
-
     } catch {
       setBackendStatus({ status: "offline" });
     }
@@ -45,30 +56,34 @@ function App() {
     <>
       <h1>NeuroSig</h1>
 
-      <h2>Current file: {selectedFile?.name ?? "No file selected"}</h2>
+      <div>
+        <h2>Current file: {selectedFile?.name ?? "No file selected"}</h2>
 
-      <input
-        ref={fileInputRef}
-        type="file"
-        accept=".csv"
-        onChange={(event) => setSelectedFile(event.target.files[0])}
-      />
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept=".csv"
+          onChange={(event) => setSelectedFile(event.target.files[0])}
+        />
 
-      <button
-        type="button"
-        onClick={() => {
-          setSelectedFile(null);
-          fileInputRef.current.value = "";
-        }}
-      >
-        Remove file
-      </button>
+        <div>{errorMessage}</div>
 
-      <button type="button" onClick={handleReadFile}>
-        Read File
-      </button>
+        <button
+          type="button"
+          onClick={() => {
+            setSelectedFile(null);
+            fileInputRef.current.value = "";
+          }}
+        >
+          Remove file
+        </button>
 
-      <p>Backend Status: {backendStatus?.status ?? "Not Checked"}</p>
+        <button type="button" onClick={handleReadFile}>
+          Read File
+        </button>
+      </div>
+
+      <h2>Backend Status: {backendStatus?.status ?? "Not Checked"}</h2>
 
       <button type="button" onClick={checkBackendStatus}>
         Check Backend
@@ -96,8 +111,6 @@ function App() {
           <p>No analysis available yet.</p>
         )}
       </div>
-
-
     </>
   );
 }
