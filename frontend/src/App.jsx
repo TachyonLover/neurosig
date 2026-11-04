@@ -4,30 +4,41 @@ import "./App.css";
 function App() {
   const [selectedFile, setSelectedFile] = useState(null);
   const [backendStatus, setBackendStatus] = useState(null);
+  const [analysisResults, setAnalysisResults] = useState(null);
   const fileInputRef = useRef(null);
 
   async function handleReadFile() {
     if (!selectedFile) return;
 
-    const contents = await selectedFile.text();
-    const lines = contents.trim().split("\n");
-    console.log(lines);
-    console.log(contents);
+
+    const formData = new FormData();
+    formData.append("file", selectedFile);
+
+
+    const response = await fetch("http://127.0.0.1:8000/analyze", {
+      method: "POST",
+      body: formData,
+    });
+
+
+    const data = await response.json();
+    setAnalysisResults(data);
   }
 
   async function checkBackendStatus() {
-    try{
+    try {
       const response = await fetch("http://127.0.0.1:8000/status");
+
       if (!response.ok) {
         throw new Error("Backend returned an unsuccessful response");
       }
+
       const data = await response.json();
       setBackendStatus(data);
-      
+
     } catch {
-      setBackendStatus({status: "offline"});
+      setBackendStatus({ status: "offline" });
     }
-    
   }
 
   return (
@@ -57,13 +68,35 @@ function App() {
         Read File
       </button>
 
-      <p>
-        Backend Status: {backendStatus?.status ?? "Not Checked"}
-      </p>
+      <p>Backend Status: {backendStatus?.status ?? "Not Checked"}</p>
 
       <button type="button" onClick={checkBackendStatus}>
         Check Backend
       </button>
+
+      <div>
+        <h1>Results:</h1>
+
+        {analysisResults ? (
+          <>
+            <p>Filename: {analysisResults.filename}</p>
+            <p>Row count: {analysisResults.row_count}</p>
+
+            <h2>Channel Averages:</h2>
+
+            {Object.entries(analysisResults.averages).map(
+              ([channel, average]) => (
+                <p key={channel}>
+                  {channel}: {average}
+                </p>
+              ),
+            )}
+          </>
+        ) : (
+          <p>No analysis available yet.</p>
+        )}
+      </div>
+
 
     </>
   );
