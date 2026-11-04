@@ -32,8 +32,7 @@ function App() {
 
       setAnalysisResults(data);
     } catch (error) {
-      console.error(error)
-      setErrorMessage("Could not connect to the backend.");
+      setErrorMessage(data.Error);
     }
   }
 
