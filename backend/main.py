@@ -34,6 +34,26 @@ def parse_csv(text):
 
 def calculate_statistics(rows, channels):
 
+    timestamps = []
+    for row_number, row in enumerate(rows,start=1):
+        try:
+            timestamp = float(row.get("time"))
+
+            if not math.isfinite(timestamp):
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Time column contains a non-finite value at row {row_number}"
+                )
+            
+        except (ValueError, TypeError):
+            raise HTTPException(
+                status_code=400,
+                detail=f"Time column contains invalid values at row {row_number}"
+            )
+
+        timestamps.append(timestamp)
+
+
     # Initialize lists for each channel which contains measurements
     measurements = {}
     standard_devs = {}
@@ -79,6 +99,7 @@ def calculate_statistics(rows, channels):
         averages[channel] = round(totals.get(channel)/len(rows), 4)
 
     return {
+        "timestamps": timestamps,
         "averages": averages,
         "minimums": minimums,
         "maximums": maximums,
@@ -100,6 +121,12 @@ async def analyze(file: UploadFile = File()):
             status_code = 400,
             detail="CSV must contain column headers"
     )
+
+    if "time" not in columns:
+        raise HTTPException(
+            status_code=400,
+            detail="CSV must contain a 'time' column"
+        )
 
     if not rows:
             raise HTTPException(

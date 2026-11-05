@@ -1,5 +1,6 @@
 import { useState, useRef } from "react";
 import "./App.css";
+import EEGChart from "./EEGChart";
 
 function App() {
   const [selectedFile, setSelectedFile] = useState(null);
@@ -109,6 +110,13 @@ function App() {
         ) : (
           <p>No analysis available yet.</p>
         )}
+
+        {analysisResults && (
+          <EEGChart
+            measurements={analysisResults.measurements}
+            timestamps={analysisResults.timestamps}/>
+        )}
+
       </div>
     </>
   );
