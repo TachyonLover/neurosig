@@ -27,8 +27,23 @@ def get_status():
 def parse_csv(text):
     csv_file = io.StringIO(text)
     reader = csv.DictReader(csv_file)
-    rows = list(reader)
-    columns = reader.fieldnames
+    if reader.fieldnames:
+                reader.fieldnames = [
+                    name.strip().lower()
+                    for name in reader.fieldnames
+                ]
+    rows = []
+
+    for row in reader:
+        if all(
+            str(row.get(column, "")).strip().lower() == column
+            for column in reader.fieldnames
+        ):
+            continue
+
+        rows.append(row)
+        columns = reader.fieldnames
+    
 
     return rows, columns
 
@@ -46,6 +61,8 @@ def calculate_statistics(rows, channels):
                 )
             
         except (ValueError, TypeError):
+            print(f"Invalid timestamp at row {row_number}")
+            print(f"Raw value: {repr(row.get('time'))}")
             raise HTTPException(
                 status_code=400,
                 detail=f"Time column contains invalid values at row {row_number}"
