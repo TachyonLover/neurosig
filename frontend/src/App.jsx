@@ -1,6 +1,9 @@
 import { useState, useRef } from "react";
 import "./App.css";
 import EEGChart from "./EEGChart";
+import FileUpload from "./components/FileUpload";
+import StatsPanel from "./components/StatsPanel";
+import Header from "./components/Header";
 
 function App() {
   const [selectedFile, setSelectedFile] = useState(null);
@@ -33,7 +36,7 @@ function App() {
 
       setAnalysisResults(data);
     } catch (error) {
-      setErrorMessage(data.Error);
+      setErrorMessage("Could not connect to backend.");
     }
   }
 
@@ -54,63 +57,24 @@ function App() {
 
   return (
     <>
-      <h1>NeuroSig</h1>
+      <Header
+        backendStatus={backendStatus}
+        checkBackendStatus={checkBackendStatus}
+      />
 
-      <div>
-        <h2>Current file: {selectedFile?.name ?? "No file selected"}</h2>
-
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept=".csv"
-          onChange={(event) => setSelectedFile(event.target.files[0])}
+      <FileUpload 
+        selectedFile={selectedFile}
+        setSelectedFile={setSelectedFile}
+        errorMessage={errorMessage}
+        fileInputRef={fileInputRef}
+        handleReadFile={handleReadFile}
         />
 
-        <div>{errorMessage}</div>
 
-        <button
-          type="button"
-          onClick={() => {
-            setSelectedFile(null);
-            fileInputRef.current.value = "";
-          }}
-        >
-          Remove file
-        </button>
-
-        <button type="button" onClick={handleReadFile}>
-          Read File
-        </button>
-      </div>
-
-      <h2>Backend Status: {backendStatus?.status ?? "Not Checked"}</h2>
-
-      <button type="button" onClick={checkBackendStatus}>
-        Check Backend
-      </button>
+      <StatsPanel 
+        analysisResults={analysisResults}/>
 
       <div>
-        <h1>Results:</h1>
-
-        {analysisResults ? (
-          <>
-            <p>Filename: {analysisResults.filename}</p>
-            <p>Row count: {analysisResults.row_count}</p>
-
-            <h2>Channel Averages:</h2>
-
-            {Object.entries(analysisResults.averages).map(
-              ([channel, average]) => (
-                <p key={channel}>
-                  {channel}: {average}
-                </p>
-              ),
-            )}
-          </>
-        ) : (
-          <p>No analysis available yet.</p>
-        )}
-
         {analysisResults && (
           <EEGChart
             measurements={analysisResults.measurements}
