@@ -1,6 +1,9 @@
 import { useState, useRef } from "react";
+import { Routes, Route } from "react-router";
+import Landing from "./pages/Landing";
+import Dashboard from "./pages/Dashboard";
 import "./App.css";
-import EEGChart from "./EEGChart";
+import EEGChart from "./components/EEGChart";
 import FileUpload from "./components/FileUpload";
 import StatsPanel from "./components/StatsPanel";
 import Header from "./components/Header";
@@ -11,6 +14,7 @@ function App() {
   const [analysisResults, setAnalysisResults] = useState(null);
   const [errorMessage, setErrorMessage] = useState(null);
   const fileInputRef = useRef(null);
+  const [recordings, setRecordings] = useState([]);
 
   async function handleReadFile() {
     if (!selectedFile) return;
@@ -35,6 +39,18 @@ function App() {
       setErrorMessage(null);
 
       setAnalysisResults(data);
+      const newRecording = {
+        ...data,
+        id: crypto.randomUUID(),
+      };
+
+      setRecordings((previousRecordings) => [
+        ...previousRecordings,
+        newRecording
+      ])
+
+      console.log("Recordings:", recordings);
+
     } catch (error) {
       setErrorMessage("Could not connect to backend.");
     }
@@ -57,7 +73,31 @@ function App() {
 
   return (
     <>
-      <Header
+      <Routes>
+        <Route path="/" element={<Landing />} />
+        <Route
+          path="/dashboard"
+          element={
+            <Dashboard
+              recordings={recordings}
+              selectedFile={selectedFile}
+              setSelectedFile={setSelectedFile}
+              errorMessage={errorMessage}
+              fileInputRef={fileInputRef}
+              handleReadFile={handleReadFile}
+            />
+          }
+        />
+      </Routes>
+    </>
+  );
+}
+
+export default App;
+
+{
+  /* 
+<Header
         backendStatus={backendStatus}
         checkBackendStatus={checkBackendStatus}
       />
@@ -82,8 +122,6 @@ function App() {
         )}
 
       </div>
-    </>
-  );
+  
+  */
 }
-
-export default App;
