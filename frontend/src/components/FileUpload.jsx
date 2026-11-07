@@ -7,9 +7,9 @@ function FileUpload({
 }) {
   return (
     <section>
-      <h2>Upload EEG Recording</h2>
       <h3>Current file: {selectedFile?.name ?? "No file selected"}</h3>
       <input
+        className="file-input"
         ref={fileInputRef}
         type="file"
         accept=".csv"
@@ -18,19 +18,27 @@ function FileUpload({
 
       <div>{errorMessage}</div>
 
-      <button
-        type="button"
-        onClick={() => {
-          setSelectedFile(null);
-          fileInputRef.current.value = "";
-        }}
-      >
-        Remove file
-      </button>
+      <div className="upload-actions">
+        <button
+          type="button"
+          onClick={handleReadFile}
+          className="analyze-button"
+          disabled={!selectedFile}
+        >
+          Analyze Recording
+        </button>
 
-      <button type="button" onClick={handleReadFile}>
-        Read File
-      </button>
+        <button
+          type="button"
+          className="remove-file-button"
+          onClick={() => {
+            setSelectedFile(null);
+            fileInputRef.current.value = "";
+          }}
+        >
+          Remove file
+        </button>
+      </div>
     </section>
   );
 }

@@ -2,6 +2,7 @@ import { useState, useRef } from "react";
 import { Routes, Route } from "react-router";
 import Landing from "./pages/Landing";
 import Dashboard from "./pages/Dashboard";
+import AppLayout from "./components/AppLayout";
 import "./App.css";
 import EEGChart from "./components/EEGChart";
 import FileUpload from "./components/FileUpload";
@@ -44,13 +45,23 @@ function App() {
         id: crypto.randomUUID(),
       };
 
-      setRecordings((previousRecordings) => [
-        ...previousRecordings,
-        newRecording
-      ])
+      setRecordings((prev) => {
+        const existingRecording = prev.find(
+          (recording) => recording.filename === data.filename,
+        );
+
+        if (existingRecording) {
+          return prev.map((recording) =>
+            recording.id === existingRecording.id
+              ? { ...data, id: recording.id }
+              : recording,
+          );
+        }
+
+        return [...prev, newRecording];
+      });
 
       console.log("Recordings:", recordings);
-
     } catch (error) {
       setErrorMessage("Could not connect to backend.");
     }
@@ -75,19 +86,21 @@ function App() {
     <>
       <Routes>
         <Route path="/" element={<Landing />} />
-        <Route
-          path="/dashboard"
-          element={
-            <Dashboard
-              recordings={recordings}
-              selectedFile={selectedFile}
-              setSelectedFile={setSelectedFile}
-              errorMessage={errorMessage}
-              fileInputRef={fileInputRef}
-              handleReadFile={handleReadFile}
-            />
-          }
-        />
+        <Route element={<AppLayout />}>
+          <Route
+            path="/dashboard"
+            element={
+              <Dashboard
+                recordings={recordings}
+                selectedFile={selectedFile}
+                setSelectedFile={setSelectedFile}
+                errorMessage={errorMessage}
+                fileInputRef={fileInputRef}
+                handleReadFile={handleReadFile}
+              />
+            }
+          />
+        </Route>
       </Routes>
     </>
   );
