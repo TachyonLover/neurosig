@@ -1,5 +1,6 @@
 import { Line } from "react-chartjs-2";
-import { useState } from "react";
+import { useState, useRef } from "react";
+import zoomPlugin from "chartjs-plugin-zoom";
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -19,18 +20,19 @@ ChartJS.register(
   Title,
   Tooltip,
   Legend,
+  zoomPlugin,
 );
 
 function EEGChart({ measurements, timestamps }) {
-  const colors = [
-    "rgb(75, 192, 192)",
-    "rgb(255, 99, 132)",
-    "rgb(54, 162, 235)",
-    "rgb(255, 159, 64)",
-    "rgb(153, 102, 255)",
-  ];
+  const colors = ["#06fbe6", "#ffff00", "#ff0000", "#cc00ff", "#00ff40"];
 
   const [hiddenChannels, setHiddenChannels] = useState([]);
+
+  const chartRef = useRef(null);
+
+  function resetZoom() {
+    chartRef.current?.resetZoom();
+  }
 
   function toggleChannel(channel) {
     setHiddenChannels((previous) =>
@@ -48,30 +50,67 @@ function EEGChart({ measurements, timestamps }) {
         y: value,
       })),
       borderColor: colors[index % colors.length],
+      borderWidth: 1.5,
+      tension: 0,
       hidden: hiddenChannels.includes(channel),
     })),
   };
 
   const options = {
     responsive: true,
+    maintainAspectRatio: false,
     animation: false,
+    interaction: {
+      mode: "index",
+      intersect: false,
+      axis: "x",
+    },
     elements: {
-        point: {
-            radius: 0
-        }
+      point: {
+        radius: 0,
+      },
     },
     scales: {
       x: {
         type: "linear",
+        grid: {
+          color: "#333333",
+        },
+        ticks: {
+          color: "#A3A3A3",
+        },
         title: {
           display: true,
           text: "Time (seconds)",
+          color: "#A3A3A3",
         },
       },
       y: {
+        grid: {
+          color: "#333333",
+        },
+        ticks: {
+          color: "#A3A3A3",
+        },
         title: {
           display: true,
           text: "Amplitude",
+          color: "#A3A3A3",
+        },
+      },
+    },
+    plugins: {
+      legend: {
+        display: false,
+      },
+
+      zoom: {
+        zoom: {
+          wheel: {
+            enabled: true,
+            speed: 0.1,
+          },
+          mode: "x",
         },
       },
     },
@@ -79,18 +118,39 @@ function EEGChart({ measurements, timestamps }) {
 
   return (
     <div>
-      <h2>EEG Signal</h2>
-      {Object.keys(measurements).map((channel) => (
-        <label key={channel}>
-          <input
-            type="checkbox"
-            checked={!hiddenChannels.includes(channel)}
-            onChange={() => toggleChannel(channel)}
-          />
-          {channel}
-        </label>
-      ))}
-      <Line data={data} options={options} />
+      <div className="eeg-channel-controls">
+        {Object.keys(measurements).map((channel, index) => (
+          <label
+            key={channel}
+            className="eeg-channel-toggle"
+            style={{
+              "--channel-color": colors[index % colors.length],
+            }}
+          >
+            <input
+              type="checkbox"
+              checked={!hiddenChannels.includes(channel)}
+              onChange={() => toggleChannel(channel)}
+            />
+
+            <span className="channel-indicator" />
+            <span>{channel}</span>
+          </label>
+        ))}
+      </div>
+
+      <div className="eeg-chart-canvas">
+        <Line ref={chartRef} data={data} options={options} />
+        <div className="eeg-chart-toolbar">
+          <button
+            type="button"
+            className="eeg-reset-button"
+            onClick={resetZoom}
+          >
+            Reset Zoom
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

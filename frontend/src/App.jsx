@@ -8,6 +8,7 @@ import EEGChart from "./components/EEGChart";
 import FileUpload from "./components/FileUpload";
 import StatsPanel from "./components/StatsPanel";
 import Header from "./components/Header";
+import RecordingAnalysis from "./pages/RecordingAnalysis";
 
 function App() {
   const [selectedFile, setSelectedFile] = useState(null);
@@ -100,6 +101,7 @@ function App() {
               />
             }
           />
+          <Route path="/recordings/:id" element={<RecordingAnalysis recordings={recordings}/>} />
         </Route>
       </Routes>
     </>
@@ -107,34 +109,3 @@ function App() {
 }
 
 export default App;
-
-{
-  /* 
-<Header
-        backendStatus={backendStatus}
-        checkBackendStatus={checkBackendStatus}
-      />
-
-      <FileUpload 
-        selectedFile={selectedFile}
-        setSelectedFile={setSelectedFile}
-        errorMessage={errorMessage}
-        fileInputRef={fileInputRef}
-        handleReadFile={handleReadFile}
-        />
-
-
-      <StatsPanel 
-        analysisResults={analysisResults}/>
-
-      <div>
-        {analysisResults && (
-          <EEGChart
-            measurements={analysisResults.measurements}
-            timestamps={analysisResults.timestamps}/>
-        )}
-
-      </div>
-  
-  */
-}

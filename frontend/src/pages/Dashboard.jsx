@@ -57,6 +57,7 @@ function Dashboard({
                         <span className="recording-details">
                           {recording.row_count.toLocaleString()} samples
                         </span>
+                        <small>{recording.id}</small>
                       </span>
 
                       <span className="recording-arrow" aria-hidden="true">➔</span>

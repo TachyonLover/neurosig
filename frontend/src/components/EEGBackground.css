@@ -1,0 +1,62 @@
+.eeg-background {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  opacity: 0.35;
+}
+
+.eeg-background::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+
+  background-image:
+    linear-gradient(
+      to right,
+      rgba(0, 255, 233, 0.12) 1px,
+      transparent 1px
+    ),
+    linear-gradient(
+      to bottom,
+      rgba(0, 255, 233, 0.12) 1px,
+      transparent 1px
+    );
+
+  background-size: 40px 40px;
+  z-index: 0;
+}
+
+.eeg-background svg {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+}
+
+.eeg-background svg {
+  width: 100%;
+  height: 100%;
+}
+
+.eeg-wave {
+  fill: none;
+  stroke: var(--color-primary);
+  stroke-width: 2;
+  vector-effect: non-scaling-stroke;
+  filter: drop-shadow(0 0 5px var(--color-primary));
+}
+
+.eeg-wave-track {
+  animation: eeg-scroll 12s linear infinite;
+}
+
+@keyframes eeg-scroll {
+  from {
+    transform: translateX(0);
+  }
+
+  to {
+    transform: translateX(-600px);
+  }
+}

@@ -3,17 +3,19 @@ import { NavLink } from "react-router";
 function Sidebar({ collapsed, onToggle }) {
   return (
     <aside className="sidebar">
-      {!collapsed && <h2 className="sidebar-title">NeuroSig</h2>}
-      
-      <button
-        className="sidebar-toggle"
-        onClick={onToggle}
-        type="button"
-        aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-        aria-expanded={!collapsed}
-      >
-        {collapsed ? "»" : "«"}
-      </button>
+      <div className="sidebar-header">
+        {!collapsed && <h2 className="sidebar-title">NeuroSig</h2>}
+
+        <button
+          className="sidebar-toggle"
+          onClick={onToggle}
+          type="button"
+          aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+          aria-expanded={!collapsed}
+        >
+          {collapsed ? "»" : "«"}
+        </button>
+      </div>
 
       <nav>
         <NavLink to="/" end title="Home">

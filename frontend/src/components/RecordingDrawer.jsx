@@ -1,5 +1,8 @@
+import { useNavigate } from "react-router";
+
 function RecordingDrawer({ recording, onClose, closing, onAnimationEnd }) {
   if (!recording) return null;
+  const navigate = useNavigate();
 
   return (
     <aside
@@ -38,7 +41,7 @@ function RecordingDrawer({ recording, onClose, closing, onAnimationEnd }) {
             <strong>{recording.channels.length}</strong>
           </div>
 
-          <button className="view-analysis-button" type="button" disabled>
+          <button className="view-analysis-button" type="button" onClick={() => navigate(`/recordings/${recording.id}`)}>
             View Full Analysis
           </button>
         </div>
