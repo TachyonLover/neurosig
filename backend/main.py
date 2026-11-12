@@ -1,11 +1,29 @@
 from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from contextlib import asynccontextmanager
+from database import init_database, get_recordings, add_recording
+from pydantic import BaseModel
+from pathlib import Path
+from uuid import uuid4
 import csv
 import io
 import math
 import statistics
 
-app = FastAPI()
+UPLOAD_DIR = Path(__file__).parent / "uploads"
+UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+
+class RecordingCreate(BaseModel):
+     filename: str
+     row_count: int
+     channel_count: int
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+     init_database()
+     yield
+
+app = FastAPI(lifespan=lifespan)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:5173"],
@@ -23,6 +41,70 @@ def get_status():
     return {"status": "ready",
             "application": "NeuroSig",
             "supported_format": "CSV"}
+
+@app.get("/recordings")
+def list_recordings():
+     recordings = get_recordings()
+
+     return {
+          "recordings": [dict(recording) for recording in recordings]
+     }
+
+
+@app.post("/recordings", status_code=201)
+async def create_recording(file: UploadFile = File()):
+    contents = await file.read()
+
+    try:
+        text = contents.decode("utf-8")
+    except UnicodeDecodeError:
+        raise HTTPException(
+            status_code=400,
+            detail="File must be UTF-8 encoded"
+        )
+
+    rows, columns = parse_csv(text)
+
+    if not columns or "time" not in columns or not rows:
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid EEG CSV"
+        )
+
+    channels = [column for column in columns if column != "time"]
+
+    if not channels:
+        raise HTTPException(
+            status_code=400,
+            detail="CSV contains no EEG channels"
+        )
+
+    # Validate measurements before saving
+    calculate_statistics(rows, channels)
+
+    filename = f"{uuid4().hex}.csv"
+    file_path = UPLOAD_DIR / filename
+
+    file_path.write_bytes(contents)
+
+    try:
+        recording_id = add_recording(
+            filename=file.filename,
+            row_count=len(rows),
+            channel_count=len(channels),
+            file_path=filename
+        )
+    except Exception:
+        file_path.unlink(missing_ok=True)
+        raise
+
+    return {
+        "id": recording_id,
+        "filename": file.filename,
+        "row_count": len(rows),
+        "channel_count": len(channels),
+        "message": "Recording saved successfully"
+    }
 
 def parse_csv(text):
     csv_file = io.StringIO(text)
