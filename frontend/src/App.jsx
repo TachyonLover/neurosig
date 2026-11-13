@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Routes, Route } from "react-router";
 import Landing from "./pages/Landing";
 import Dashboard from "./pages/Dashboard";
@@ -18,6 +18,26 @@ function App() {
   const fileInputRef = useRef(null);
   const [recordings, setRecordings] = useState([]);
 
+  async function loadRecordings() {
+    try {
+      const response = await fetch("http://127.0.0.1:8000/recordings");
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch recordings");
+      }
+
+      const data = await response.json();
+
+      setRecordings(data.recordings);
+    } catch (error) {
+      console.error("Could not load recordings:", error);
+    }
+  }
+
+  useEffect(() => {
+    loadRecordings();
+  }, []);
+
   async function handleReadFile() {
     if (!selectedFile) return;
 
@@ -25,7 +45,7 @@ function App() {
     formData.append("file", selectedFile);
 
     try {
-      const response = await fetch("http://127.0.0.1:8000/analyze", {
+      const response = await fetch("http://127.0.0.1:8000/recordings", {
         method: "POST",
         body: formData,
       });
@@ -41,10 +61,7 @@ function App() {
       setErrorMessage(null);
 
       setAnalysisResults(data);
-      const newRecording = {
-        ...data,
-        id: crypto.randomUUID(),
-      };
+      setRecordings((prev) => [...prev, data])
 
       setRecordings((prev) => {
         const existingRecording = prev.find(
@@ -65,6 +82,29 @@ function App() {
       console.log("Recordings:", recordings);
     } catch (error) {
       setErrorMessage("Could not connect to backend.");
+    }
+  }
+
+  async function handleDeleteRecording(recordingId) {
+    try {
+      const response = await fetch (`http://127.0.0.1:8000/recordings/${recordingId}`,
+        { method: "DELETE"}
+      );
+
+      console.log("DELETE status:", response.status)
+      
+      if (!response.ok) {
+        throw new Error("Failed to delete recording");
+      }
+
+
+      setRecordings((prev) => prev.filter((recording) => recording.id !== recordingId)
+    );
+
+    return true;
+    } catch (error) {
+      console.error("Could not delete recording:", error)
+      return false;
     }
   }
 
@@ -98,10 +138,14 @@ function App() {
                 errorMessage={errorMessage}
                 fileInputRef={fileInputRef}
                 handleReadFile={handleReadFile}
+                handleDeleteRecording={handleDeleteRecording}
               />
             }
           />
-          <Route path="/recordings/:id" element={<RecordingAnalysis recordings={recordings}/>} />
+          <Route
+            path="/recordings/:id"
+            element={<RecordingAnalysis />}
+          />
         </Route>
       </Routes>
     </>

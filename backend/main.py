@@ -1,7 +1,7 @@
 from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
-from database import init_database,get_recording, get_recordings, add_recording
+from database import init_database,get_recording, get_recordings, add_recording, delete_recording
 from pydantic import BaseModel
 from pathlib import Path
 from uuid import uuid4
@@ -28,7 +28,7 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:5173"],
     allow_credentials=False,
-    allow_methods=["GET", "POST"],
+    allow_methods=["GET", "POST", "DELETE"],
     allow_headers=["*"],
 )
 
@@ -82,6 +82,26 @@ def read_recording(recording_id: int):
         "channels": columns,
         **stats
     }
+
+@app.delete("/recordings/{recording_id}")
+def remove_recording(recording_id: int):
+    recording = get_recording(recording_id)
+
+    if recording is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Recording not found"
+        )
+
+    recording = dict(recording)
+
+    if recording["file_path"]:
+        file_path = UPLOAD_DIR / recording["file_path"]
+        file_path.unlink(missing_ok=True)
+
+    delete_recording(recording_id)
+
+    return{"message": "Recording deleted successfully"}
 
 @app.get("/recordings")
 def list_recordings():

@@ -1,15 +1,51 @@
+import { useState, useEffect } from "react";
 import { useParams } from "react-router";
 import EEGChart from "../components/EEGChart";
 
 function RecordingAnalysis({ recordings }) {
   const { id } = useParams();
-  const recording = recordings.find((recording) => recording.id === id);
+  const [recording, setRecording] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  if (!recording) {
+  useEffect(() => {
+    async function loadRecording() {
+      setLoading(true);
+      setError(null);
+
+      try {
+        const response = await fetch(`http://127.0.0.1:8000/recordings/${id}`);
+
+        if (!response.ok) {
+          throw new Error("Failed to load recording");
+        }
+
+        const data = await response.json();
+
+        setRecording(data);
+      } catch (error) {
+        setError(error.message);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadRecording();
+  }, [id]);
+
+  if (loading) {
     return (
       <div className="recording-analysis">
-        <h1>Recording not found</h1>
-        <p>This recording may not exist or may no longer be loaded</p>
+        <p>Loading recording...</p>
+      </div>
+    );
+  }
+
+  if (error || !recording) {
+    return (
+      <div className="recording-analysis">
+        <h1>Unable to load recording</h1>
+        <p>{error || "Recording not found"}</p>
       </div>
     );
   }
@@ -31,7 +67,7 @@ function RecordingAnalysis({ recordings }) {
 
         <div className="analysis-stat-card">
           <span className="analysis-stat-label">EEG Channels</span>
-          <h2>{recording.channels.length}</h2>
+          <h2>{recording.channel_count}</h2>
           <p>Available signal channels</p>
         </div>
       </section>

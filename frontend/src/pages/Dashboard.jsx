@@ -9,6 +9,7 @@ function Dashboard({
   errorMessage,
   fileInputRef,
   handleReadFile,
+  handleDeleteRecording
 }) {
   const [selectedRecordingId, setSelectedRecordingId] = useState(null);
   const selectedRecording = recordings.find(
@@ -57,7 +58,6 @@ function Dashboard({
                         <span className="recording-details">
                           {recording.row_count.toLocaleString()} samples
                         </span>
-                        <small>{recording.id}</small>
                       </span>
 
                       <span className="recording-arrow" aria-hidden="true">➔</span>
@@ -73,6 +73,20 @@ function Dashboard({
                   recording={selectedRecording}
                   closing={drawerClosing}
                   onClose={() => setDrawerClosing(true)}
+                  onDelete={async () => {
+                    const confirmed = window.confirm(
+                      `Are you sure you want to delete "${selectedRecording.filename}"?`
+                    );
+
+                    if(!confirmed) return;
+
+                    const deleted = await handleDeleteRecording(selectedRecording.id);
+
+                    if (deleted) {
+                      setDrawerClosing(true);
+                    }
+                    setDrawerClosing(true);
+                  }}
                   onAnimationEnd={() => {
                     setSelectedRecordingId(null);
                     setDrawerClosing(false);

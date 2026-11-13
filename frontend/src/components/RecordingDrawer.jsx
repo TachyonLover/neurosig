@@ -1,8 +1,8 @@
 import { useNavigate } from "react-router";
 
-function RecordingDrawer({ recording, onClose, closing, onAnimationEnd }) {
-  if (!recording) return null;
+function RecordingDrawer({ recording, onClose, onDelete, closing, onAnimationEnd }) {
   const navigate = useNavigate();
+  if (!recording) return null;
 
   return (
     <aside
@@ -18,7 +18,7 @@ function RecordingDrawer({ recording, onClose, closing, onAnimationEnd }) {
         type="button"
         onClick={onClose}
         className="drawer-close"
-        aria-lavel="Close recording preview"
+        aria-label="Close recording preview"
       >
         x
       </button>
@@ -38,11 +38,14 @@ function RecordingDrawer({ recording, onClose, closing, onAnimationEnd }) {
 
           <div className="drawer-stat">
             <span>Channels</span>
-            <strong>{recording.channels.length}</strong>
+            <strong>{recording.channel_count}</strong>
           </div>
 
           <button className="view-analysis-button" type="button" onClick={() => navigate(`/recordings/${recording.id}`)}>
             View Full Analysis
+          </button>
+          <button type="button" className="delete-recording-button" onClick={onDelete}>
+            🗑
           </button>
         </div>
       </div>
