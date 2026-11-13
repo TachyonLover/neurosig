@@ -1,7 +1,7 @@
 from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
-from database import init_database, get_recordings, add_recording
+from database import init_database,get_recording, get_recordings, add_recording
 from pydantic import BaseModel
 from pathlib import Path
 from uuid import uuid4
@@ -41,6 +41,47 @@ def get_status():
     return {"status": "ready",
             "application": "NeuroSig",
             "supported_format": "CSV"}
+
+@app.get("/recordings/{recording_id}")
+def read_recording(recording_id: int):
+    recording = get_recording(recording_id)
+
+    if recording is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Recording not found"
+        )
+
+    recording = dict(recording)
+
+    if not recording["file_path"]:
+        raise HTTPException(
+            status_code=404,
+            detail="Recording has not associated CSV file"
+        )
+
+    file_path = UPLOAD_DIR / recording["file_path"]
+
+    if not file_path.is_file():
+        raise HTTPException(
+            status_code=404,
+            detail="Recording CSV file not found"
+        )
+
+    text = file_path.read_text(encoding="utf-8")
+
+    rows, columns = parse_csv(text)
+
+    channels = [column for column in columns if column != "time"]
+
+    stats = calculate_statistics(rows, channels)
+
+    return {
+        **recording,
+        "columns": columns,
+        "channels": columns,
+        **stats
+    }
 
 @app.get("/recordings")
 def list_recordings():

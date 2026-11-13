@@ -40,6 +40,19 @@ def add_recording(filename, row_count, channel_count, file_path):
 
     return recording_id
 
+def get_recording(recording_id):
+    connection = get_connection()
+
+    cursor = connection.execute(
+        "SELECT * FROM recordings WHERE id = ?",
+        (recording_id,)
+    )
+
+    recording = cursor.fetchone()
+    connection.close()
+
+    return recording
+
 def get_recordings():
     connection = get_connection()
 
@@ -64,13 +77,10 @@ def delete_recording(recording_id):
     connection.close()
 
 if __name__ == "__main__":
-    connection = get_connection()
+    recording = get_recording(1)
 
-    connection.execute("""
-        ALTER TABLE recordings
-        ADD COLUMN file_path TEXT
-    """)
+    if recording:
+        print(dict(recording))
 
-    connection.commit()
-    connection.close()
-    print("Added file_path column")
+    else:
+        print("Recording not found")
